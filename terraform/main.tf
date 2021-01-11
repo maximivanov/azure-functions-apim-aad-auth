@@ -95,6 +95,9 @@ resource "azurerm_api_management" "api_management" {
   publisher_name      = "MaxIvanov"
   publisher_email     = "hello@maxivanov.io"
   sku_name            = "Developer_1" # Support for Consumption_0 arrives in hashicorp/azurerm v2.42.0
+  identity {
+    type = "SystemAssigned"
+  }
 }
 
 resource "azurerm_api_management_api" "api_management_api_public" {
@@ -117,4 +120,19 @@ resource "azurerm_api_management_api_operation" "api_management_api_operation_pu
   display_name        = "Hello World API endpoint"
   method              = "GET"
   url_template        = "/hello-world"
+}
+
+resource "azurerm_api_management_api_policy" "api_management_api_policy_api_public" {
+  api_name            = azurerm_api_management_api.api_management_api_public.name
+  api_management_name = azurerm_api_management.api_management.name
+  resource_group_name = azurerm_resource_group.resource_group.name
+
+  xml_content = <<XML
+<policies>
+  <inbound>
+    <base />
+    <authentication-managed-identity resource="${azuread_application.ad_application_function_app.application_id}" ignore-error="false" />
+  </inbound>
+</policies>
+XML
 }
